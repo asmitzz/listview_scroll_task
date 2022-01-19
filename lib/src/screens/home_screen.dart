@@ -11,15 +11,33 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _controller = ScrollController();
   int selectedIndex = 0;
   late Size deviceSize;
-  double width = 100;
 
-  void _setScrollbar(index) {
+  final List<ItemWidth> itemsWidth = [];
+
+  final arr = [2, 3, 5, 6];
+
+  getScrollWidth(int index) {
+    double width = 0;
+    for (var i = 0; i < index; i++) {
+      width += itemsWidth[i].width;
+    }
+    return width;
+  }
+
+  void _setScrollbar(index, itemWidth) {
     selectedIndex = index;
-    double totalWidth = 15 * width;
-    if (totalWidth - (index * width) <= 300) {}
-    _controller.animateTo(_controller.position.minScrollExtent + (index * 100),
+    _controller.animateTo(getScrollWidth(index) - 5,
         duration: const Duration(milliseconds: 300), curve: Curves.linear);
     setState(() {});
+  }
+
+  Size _textSize(String text, TextStyle style) {
+    final TextPainter textPainter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        maxLines: 1,
+        textDirection: TextDirection.ltr)
+      ..layout(minWidth: 0, maxWidth: double.infinity);
+    return textPainter.size;
   }
 
   @override
@@ -41,21 +59,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                     scrollDirection: Axis.horizontal,
                     itemCount: 15,
-                    itemBuilder: (BuildContext context, int index) => Container(
-                        alignment: Alignment.centerLeft,
-                        width: index == 14 ? deviceSize.width : width,
-                        color: Colors.black,
-                        child: TextButton(
-                            onPressed: () => _setScrollbar(index),
+                    itemBuilder: (BuildContext context, int index) {
+                      final Size txtSize = _textSize(
+                          index % 2 == 0
+                              ? "Item $index"
+                              : "item item item item $index",
+                          TextStyle(
+                              fontWeight: selectedIndex == index
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: Colors.black,
+                              fontSize: selectedIndex == index ? 22 : 20));
+
+                      if (itemsWidth
+                          .where((ItemWidth element) => element.id == index)
+                          .isEmpty) {
+                        itemsWidth.add(ItemWidth(index, (txtSize.width+16)));
+                      }
+
+                      return TextButton(
+                          style: TextButton.styleFrom(padding:const EdgeInsets.symmetric(horizontal: 8)),
+                          onPressed: () => _setScrollbar(index, txtSize.width),
+                          child: SizedBox(
+                            width:
+                                index == 14 ? deviceSize.width : txtSize.width,
                             child: Text(
-                              "Item $index",
+                              index % 2 == 0
+                                  ? "Item $index"
+                                  : "item item item item $index",
                               style: TextStyle(
                                   fontWeight: selectedIndex == index
                                       ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: Colors.white,
+                                      : FontWeight.w500,
+                                  color: Colors.black,
                                   fontSize: selectedIndex == index ? 22 : 20),
-                            ))),
+                            ),
+                          ));
+                    },
                   ),
                 ),
                 Expanded(
@@ -63,7 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text(
                   "Content of Item : $selectedIndex",
                   style: const TextStyle(
-                      fontSize: 22,color: Colors.white, fontWeight: FontWeight.bold),
+                      fontSize: 22,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold),
                 )))
               ],
             ),
@@ -72,4 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+class ItemWidth {
+  final int id;
+  final double width;
+
+  ItemWidth(this.id, this.width);
 }
